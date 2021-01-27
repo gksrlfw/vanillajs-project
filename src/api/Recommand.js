@@ -12,7 +12,7 @@ export default class Recommand {
         this.keyword = keyword;
         return this._recommand();
     }
-    
+
     async _recommand() {
         try {
             const data = await fetch(`${BASE_URL}=${this.keyword}`);
@@ -20,6 +20,7 @@ export default class Recommand {
         }  
         catch(err) {
             console.error(err);
+            return alert('다시 시도해주세요');
         }
     }
 }
