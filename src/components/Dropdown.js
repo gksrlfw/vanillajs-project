@@ -11,28 +11,34 @@ export default class Dropdown {
     }
 
     setData(data) {
+        this.curHL = 0;
         this.data = data;
         this._render();
     }
 
     clear() {
-        this.target.removeChild(this.section);
+        this.target.removeChild(this.sectionParent);
     }
 
     create() {
+        this.sectionParent = document.createElement('div');
+        this.sectionParent.className = 'recommand-box-parent';
         this.section = document.createElement('div');
         this.section.className = 'recommand-box';
         this.section.classList.add('hidden');
-        this.target.appendChild(this.section);
+        this.sectionParent.appendChild(this.section);
+        this.target.appendChild(this.sectionParent);
     }
 
     downHighlight() {
         this.section.childNodes[this.curHL++].classList.remove('highlight');
+        if(this.curHL === this.data.length) this.curHL = 0;
         this.section.childNodes[this.curHL].classList.add('highlight');
     }
 
     upHighlight() {
         this.section.childNodes[this.curHL--].classList.remove('highlight');
+        if(this.curHL === -1) this.curHL = this.data.length-1;
         this.section.childNodes[this.curHL].classList.add('highlight');
     }
 
@@ -49,6 +55,13 @@ export default class Dropdown {
             this.section.appendChild(li);
         });
 
-        this.target.appendChild(this.section);  // 여기서 안하면 input보다 먼저 append 될 수 있다
+        this.sectionParent.addEventListener('click', () => {
+            console.log('click!');
+            this.clear();
+            this.create();
+        });
+        
+        this.sectionParent.appendChild(this.section)
+        this.target.appendChild(this.sectionParent);  // 여기서 안하면 input보다 먼저 append 될 수 있다
     }
 }
