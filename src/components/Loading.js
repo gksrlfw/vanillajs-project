@@ -1,12 +1,9 @@
 export default class Loading {
     constructor($target) {
+        this.$target = $target;
         this.section = document.createElement('div');
-        this.section.classList.add('loading');
-        this.section.classList.add('hidden');
-        this.section.innerText = 'LOADING';
-        $target.appendChild(this.section);
+        this._render();
     }
-
 
     start() {
         this.section.classList.remove('hidden');
@@ -14,5 +11,12 @@ export default class Loading {
 
     end() {
         this.section.classList.add('hidden');
+    }
+
+    _render() {
+        this.section.classList.add('loading');
+        this.section.classList.add('hidden');
+        this.section.innerText = 'LOADING';
+        this.$target.appendChild(this.section);
     }
 }
