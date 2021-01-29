@@ -9,15 +9,26 @@ import Modal from "./components/Modal.js";
 import Recommend from "./components/Recommend.js";
 import { throttle, getCurrnetScrollHeight, getWindowHeight } from "./util/scrollInfinity.js";
 
-/*
-    0. 코드가 너무 복잡해서 전체 리펙토링.
-    1. 구조와 관련된건 여기서 선언. (header -> input -> dropdown -> result) 아니면 난잡해짐.
-    2. 의존성의 경우, app에서 로직을 만들어서 해당 모듈에 주입.
-*/
 
 export default class App {
     constructor($target) {
+        
+        /*
+            0. 코드가 너무 복잡해서 전체 리펙토링.
+            1. 구조와 관련된건 여기서 선언. (header -> input -> dropdown -> result) 아니면 난잡해짐.
+            2. 의존성의 경우, app에서 로직을 만들어서 해당 모듈에 주입.
+        */
 
+        /*
+            추가
+            1. 모달 esc 누르면 꺼지기 o
+            2. 검색어 20개로 제한 -> 더보기 누르면 더 나오도록 o
+            3. 검색어 디바운싱 o
+            4. 스크롤 쓰로틀링  o -> 6
+            5. 레이지 로드
+            6. 인피니티 스크롤링 o
+            7. caching (session에 저장)
+        */
         this.$target = $target;
         this.headerParent = document.createElement('header');
         this.inputParent = document.createElement('section');
@@ -90,11 +101,12 @@ export default class App {
                 }, 200);
                 this.loading.end();
             }
+            
         }
         catch(err) {
             console.error(err);
         }
-    }
+    }R
 
     _lazyLoad() {
         const images = document.querySelectorAll('img');
@@ -106,12 +118,37 @@ export default class App {
             }
         })
     }
+
+    _lazyLoadWithObserve() {
+        const images = document.querySelectorAll('img');
+        if ("IntersectionObserver" in window) {
+            let io = new IntersectionObserver(function(entries, observer) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        const image = entry.target;
+                        const src = image.getAttribute('data-lazy');
+                        image.setAttribute('src', src);
+                        io.unobserve(image);
+                    }
+                });
+            });
+        
+            images.forEach(image => {
+                io.observe(image);
+            });
+        }
+        // window에 observer api가 없는 경우.
+        else {
+            this._lazyLoad();
+        }
+    }
+
     // infinity 스크롤 적용
     async _onScrollWithInfinity() {
         // if(!this.IsRandom) return;
         window.addEventListener('scroll', throttle(async _ => {
             try {
-                this._lazyLoad();
+                this._lazyLoadWithObserve();
                 if(getCurrnetScrollHeight() < getWindowHeight() - window.innerHeight - 100) return;
                 if(this.IsRandom) await this._onRandomSearch();
             }
@@ -127,7 +164,7 @@ export default class App {
             this.loading.start();
             const data = await this.randomSearchApi.setSearch()
             this.cardSection.renderForRandom(data, true);
-            this._lazyLoad();
+            this._lazyLoadWithObserve();
             this.IsRandom = true;
             this.loading.end();
         }
@@ -162,14 +199,11 @@ export default class App {
             this.loading.start();
             let data = JSON.parse(sessionStorage.getItem(`s_${value}`));
             if(!data || !data.data.length) {
-                console.log(value);
                 data = await this.searchApi.setSearch(value);
                 if(data && data.data.length) sessionStorage.setItem(`s_${value}`, JSON.stringify(data));
-                console.log('asdf', data);
             }
-            console.log(data);
             this.cardSection.render(data);
-            this._lazyLoad();
+            this._lazyLoadWithObserve();
             this.recommendSection.init();
             this.loading.end();
         }
